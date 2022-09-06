@@ -1,0 +1,13 @@
+# External dependencies
+node_modules/
+
+# Environment and secret keys
+.env
+.docker.env
+
+# Automatically compiled files from TS
+src/**/*.js
+src/**/*.js.map
+
+# Explicity exclude all playground files
+playground/

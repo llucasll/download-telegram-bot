@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/downloadTelegram.iml" filepath="$PROJECT_DIR$/.idea/downloadTelegram.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../frodo/.idea/frodo.iml" filepath="$PROJECT_DIR$/../../frodo/.idea/frodo.iml" />
+    </modules>
+  </component>
+</project>

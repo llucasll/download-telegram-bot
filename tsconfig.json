@@ -1,0 +1,35 @@
+{
+	"compilerOptions": {
+		"strict": true,
+		"noImplicitAny": true,
+		"strictNullChecks": true,
+		"noImplicitThis": true,
+		"strictBindCallApply": true,
+		"noImplicitReturns": true,
+		
+		"module": "esnext",
+		"target": "ES2022",
+		
+		"allowJs": false,
+		"checkJs": true,
+		"sourceMap": true,
+		"removeComments": true,
+		
+		"resolveJsonModule": true,
+		"moduleResolution": "node",
+		"allowSyntheticDefaultImports": true,
+		"esModuleInterop": true,
+		
+		"incremental": true,
+		"outDir": "dist",
+		
+		"lib": [
+			"DOM",
+			"dom.iterable",
+			"ES2021"
+		]
+	},
+	"exclude": [
+		"node_modules"
+	]
+}
