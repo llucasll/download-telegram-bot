@@ -6,7 +6,7 @@
 	"bin": "npm run prod",
 	"scripts": {
 		"apiServer:remove": "docker stop telegram-bot-api-server; docker container rm telegram-bot-api-server",
-		"apiServer": "npm run apiServer:remove; docker run -d --rm -p 8081:8081 --name=telegram-bot-api-server -v $PWD/../telegramDownloads/tmp:/var/lib/telegram-bot-api --env-file .docker.env aiogram/telegram-bot-api",
+		"apiServer": "npm run apiServer:remove; docker run -d --rm -p 8081:8081 --name=telegram-bot-api-server -v telegram-bot-api-data:/var/lib/telegram-bot-api --env-file .docker.env aiogram/telegram-bot-api",
 		"start": "npm run apiServer && nodemon --watch 'src/**/*' --watch .env --ext ts,json --exec npm run dev",
 		"dev": "export $(cat .env | xargs) && npm run prod",
 		"prod": "npx ts-node --esm src/index.ts",

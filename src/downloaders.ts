@@ -1,11 +1,16 @@
-import fsSync from 'node:fs';
+import process from 'node:process';
 import fs from 'node:fs/promises';
-import { dirname } from 'node:path';
+import fsSync from 'node:fs';
+import { dirname, basename } from 'node:path';
+import childProcess from 'node:child_process';
+import util from 'node:util';
 
 import fetch from 'node-fetch';
 import * as TelegramTypes from 'typegram';
 
-import bot, { downloadsFolder, token, globals } from './bot.js';
+import { downloadsFolder, globals } from './bot.js';
+
+const exec = util.promisify(childProcess.exec);
 
 const fileNamesInUse = [] as string[];
 
@@ -16,33 +21,41 @@ function fileNameAvailable (path: string) {
 	return !fsSync.existsSync(path);
 }
 
-async function saveFile (path: string, content: NodeJS.ReadableStream) {
-	let finalPath = path;
-	
+async function copyFileFromContainer (source: string, target: string) {
+	let finalPath = target;
 	for (let i=1; !fileNameAvailable(finalPath); i++)
-		finalPath = `${path} (${i})`;
+		finalPath = `${target} (${i})`;
 	
 	fileNamesInUse.push(finalPath);
-	await fs.writeFile(finalPath, content);
+	
+	await exec(`docker cp telegram-bot-api-server:"${source}" "${finalPath}"`);
 	
 	return finalPath;
 }
 
-async function downloadAndSave ({ file_id }: { file_id: string }) {
-	const { file_path: path } = await bot.getFile({ file_id });
-	// const response = await fetch(`https://api.telegram.org/file/bot${token}/${path}`);
-	const response = await fetch(`http://localhost:8081/file/bot${token}/${path}`);
+async function downloadAndSave ({ file_id, file_name }: { file_id: string, file_name?: string }) {
+	const request = await fetch(`http://localhost:8081/bot${process.env.telegramToken}/getFile`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({
+			file_id,
+		}),
+	});
+	
+	const { result: { file_path: path } } = await request.json() as any;
 	
 	const destinationPath = [
 		downloadsFolder,
 		'files',
 		globals.currentDir,
-		path!.replaceAll('/', '_'),
+		file_name ?? basename(path),
 	].join('/');
 	const dir = dirname(destinationPath);
 	
 	await fs.mkdir(dir, { recursive: true });
-	return await saveFile(destinationPath, response.body!);
+	return await copyFileFromContainer(path, destinationPath);
 }
 
 export async function video (message: TelegramTypes.Message.VideoMessage) {

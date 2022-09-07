@@ -31,17 +31,13 @@ async function downloadFile (message: TelegramTypes.Message) {
 }
 
 async function updateHandler (update: TelegramTypes.Update.MessageUpdate) {
-	if (!update.message) {
-		await log('Not a message', update);
-		return;
-	}
+	if (!update.message)
+		return await log('Not a message', update);
 	
 	const { message } = update;
 	
-	if (!authorizedUsers.includes(message.from.id)) {
-		await log('User is not authorized', update);
-		return;
-	}
+	if (!authorizedUsers.includes(message.from.id))
+		return await log('User is not authorized', update);
 	
 	if ('text' in message) {
 		const root = [ downloadsFolder, 'files' ].join('/');
@@ -50,14 +46,11 @@ async function updateHandler (update: TelegramTypes.Update.MessageUpdate) {
 		
 		// console.log([ root, target, normalize(target), relative ]);
 		
-		if (!relative || !normalize(target).startsWith(root)) {
-			await bot.sendMessage({
+		if (!relative || !normalize(target).startsWith(root))
+			return await bot.sendMessage({
 				chat_id: message.chat.id,
 				text: `Desculpe, não é permitido salvar na pasta raíz, ou acima dela`,
 			});
-			
-			return;
-		}
 		
 		globals.currentDir = relative;
 		
@@ -69,28 +62,24 @@ async function updateHandler (update: TelegramTypes.Update.MessageUpdate) {
 		return;
 	}
 	
-	if (!globals.currentDir) {
-		await bot.sendMessage({
+	if (!globals.currentDir)
+		return await bot.sendMessage({
 			chat_id: message.chat.id,
 			text: 'Por favor, digite o nome da pasta antes de enviar arquivos para download',
 		});
-		return;
-	}
 	
 	const path = await downloadFile(message);
-	if (path) {
-		await bot.sendMessage({
+	if (path)
+		return await bot.sendMessage({
 			chat_id: message.chat.id,
 			text: `Arquivo salvo em '${path.replace('../', '')}'!`,
+			reply_to_message_id: message.message_id,
 		});
-		return;
-	}
 	
 	await bot.sendMessage({
 		chat_id: message.chat.id,
 		text: 'Desculpe, não entendi. Você deve mandar o nome de uma pasta, ou arquivos.',
 	});
-	return;
 }
 
 // @ts-ignore
