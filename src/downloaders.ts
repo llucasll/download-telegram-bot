@@ -6,9 +6,9 @@ import childProcess from 'node:child_process';
 import util from 'node:util';
 
 import fetch from 'node-fetch';
-import * as TelegramTypes from 'typegram';
+import { Message } from 'typegram';
 
-import { downloadsFolder, globals } from './bot.js';
+import bot, { downloadsFolder, globals } from './bot.js';
 
 const exec = util.promisify(childProcess.exec);
 
@@ -33,7 +33,24 @@ async function copyFileFromContainer (source: string, target: string) {
 	return finalPath;
 }
 
-async function downloadAndSave ({ file_id, file_name }: { file_id: string, file_name?: string }) {
+interface File {
+	file_id: string,
+	file_name?: string,
+}
+interface DownloadResult {
+	message_id: number,
+	path: string,
+}
+async function downloadAndSave
+	({ file_id, file_name }: File, message: Message):
+	Promise<DownloadResult>
+{
+	const { message_id } = await bot.sendMessage({
+		chat_id: message.chat.id,
+		text: `Iniciando o download do arquivo...`,
+		reply_to_message_id: message.message_id,
+	});
+	
 	const request = await fetch(`http://localhost:8081/bot${process.env.telegramToken}/getFile`, {
 		method: 'POST',
 		headers: {
@@ -48,32 +65,35 @@ async function downloadAndSave ({ file_id, file_name }: { file_id: string, file_
 	
 	const destinationPath = [
 		downloadsFolder,
-		'files',
+		'downloaded',
 		globals.currentDir,
 		file_name ?? basename(path),
 	].join('/');
 	const dir = dirname(destinationPath);
-	
 	await fs.mkdir(dir, { recursive: true });
-	return await copyFileFromContainer(path, destinationPath);
+	
+	return {
+		message_id,
+		path: await copyFileFromContainer(path, destinationPath),
+	};
 }
 
-export async function video (message: TelegramTypes.Message.VideoMessage) {
-	return await downloadAndSave(message.video);
+export async function video (message: Message.VideoMessage) {
+	return await downloadAndSave(message.video, message);
 }
 
-export async function videoNote (message: TelegramTypes.Message.VideoNoteMessage) {
-	return await downloadAndSave(message.video_note);
+export async function videoNote (message: Message.VideoNoteMessage) {
+	return await downloadAndSave(message.video_note, message);
 }
 
-export async function photo (message: TelegramTypes.Message.PhotoMessage) {
+export async function photo (message: Message.PhotoMessage) {
 	const selected = message.photo.reduce(
 		(a, b) => a.height*a.width > b.height*b.width? a : b
 	);
 	
-	return await downloadAndSave(selected);
+	return await downloadAndSave(selected, message);
 }
 
-export async function document (message: TelegramTypes.Message.DocumentMessage) {
-	return await downloadAndSave(message.document);
+export async function document (message: Message.DocumentMessage) {
+	return await downloadAndSave(message.document, message);
 }

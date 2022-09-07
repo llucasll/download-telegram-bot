@@ -3,29 +3,25 @@ import fs from 'node:fs/promises';
 
 // @ts-ignore
 import TelegramBot from 'telegram-bot-api';
-import * as TelegramTypes from 'typegram';
+import { Telegram } from 'typegram';
 
 type Methods = {
-	[Property in keyof TelegramTypes.Telegram]: TelegramTypes.Telegram[Property] extends Function
-		? (...args: Parameters<TelegramTypes.Telegram[Property]>) =>
-			Promise<ReturnType<TelegramTypes.Telegram[Property]>>
-		: TelegramTypes.Telegram[Property]
+	[Property in keyof Telegram]: Telegram[Property] extends Function
+		? (...args: Parameters<Telegram[Property]>) =>
+			Promise<ReturnType<Telegram[Property]>>
+		: Telegram[Property]
 }
 
-const globals = { currentDir: null as unknown as string };
-const downloadsFolder = process.env.downloadsFolder ?? '../telegramDownloads';
+export const globals = { currentDir: '' };
+export const downloadsFolder = process.env.downloadsFolder ?? '../telegramDownloads';
+export const token = process.env.telegramToken;
+
 await fs.mkdir(downloadsFolder, { recursive: true });
-const token = process.env.telegramToken;
-const bot: Methods = new TelegramBot({
+const bot = new TelegramBot({
 	token,
 	baseUrl: 'http://localhost:8081',
-});
+}) as Methods;
 // @ts-ignore
 bot.setMessageProvider(new TelegramBot.GetUpdateMessageProvider());
 
 export default bot;
-export {
-	token,
-	downloadsFolder,
-	globals,
-};

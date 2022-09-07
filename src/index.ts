@@ -1,20 +1,26 @@
 import process from 'node:process';
 import { normalize } from 'node:path';
 
-import * as TelegramTypes from 'typegram';
+import { Message, Update } from 'typegram';
 
-import bot, { downloadsFolder, globals } from './bot.js';
-import log from './log.js';
-import * as download from './downloaders.js';
 import { withHandler } from './utils.js';
+import log from './log.js';
+import bot, { downloadsFolder, globals } from './bot.js';
+import * as download from './downloaders.js';
+
+/*
+TODO check if 'process.env.authorizedUsers' and 'process.env.telegramToken' variables are set, and prompt to the user if not.
+ */
 
 const authorizedUsers = process.env.authorizedUsers!
 	.split(',')
 	.filter(x => x!=='')
 	.map(x => Number(x));
-console.log(authorizedUsers);
+// console.log(authorizedUsers);
 
-async function downloadFile (message: TelegramTypes.Message) {
+const rootFolder = [ downloadsFolder, 'files' ].join('/');
+
+async function downloadFile (message: Message) {
 	if ('video' in message)
 		return await download.video(message);
 	
@@ -30,7 +36,7 @@ async function downloadFile (message: TelegramTypes.Message) {
 	return null;
 }
 
-async function updateHandler (update: TelegramTypes.Update.MessageUpdate) {
+async function updateHandler (update: Update.MessageUpdate) {
 	if (!update.message)
 		return await log('Not a message', update);
 	
@@ -40,26 +46,22 @@ async function updateHandler (update: TelegramTypes.Update.MessageUpdate) {
 		return await log('User is not authorized', update);
 	
 	if ('text' in message) {
-		const root = [ downloadsFolder, 'files' ].join('/');
-		const target = [ root, message.text ].join('/');
-		const relative = normalize(target).replace(root + '/', '');
+		const target = [ rootFolder, message.text ].join('/');
+		const relative = normalize(target).replace(rootFolder + '/', '');
 		
-		// console.log([ root, target, normalize(target), relative ]);
-		
-		if (!relative || !normalize(target).startsWith(root))
+		if (!relative || !normalize(target).startsWith(rootFolder))
 			return await bot.sendMessage({
 				chat_id: message.chat.id,
 				text: `Desculpe, não é permitido salvar na pasta raíz, ou acima dela`,
+				reply_to_message_id: message.message_id,
 			});
 		
 		globals.currentDir = relative;
 		
-		await bot.sendMessage({
+		return await bot.sendMessage({
 			chat_id: message.chat.id,
 			text: `Pasta alterada para '${globals.currentDir}'`,
 		});
-		
-		return;
 	}
 	
 	if (!globals.currentDir)
@@ -68,13 +70,15 @@ async function updateHandler (update: TelegramTypes.Update.MessageUpdate) {
 			text: 'Por favor, digite o nome da pasta antes de enviar arquivos para download',
 		});
 	
-	const path = await downloadFile(message);
-	if (path)
-		return await bot.sendMessage({
+	const result = await downloadFile(message);
+	if (result) {
+		const { message_id, path } = result;
+		return await bot.editMessageText({
+			message_id,
 			chat_id: message.chat.id,
 			text: `Arquivo salvo em '${path.replace('../', '')}'!`,
-			reply_to_message_id: message.message_id,
 		});
+	}
 	
 	await bot.sendMessage({
 		chat_id: message.chat.id,

@@ -21,11 +21,8 @@
 		"esModuleInterop": true,
 		
 		"incremental": true,
-		"outDir": "dist",
 		
 		"lib": [
-			"DOM",
-			"dom.iterable",
 			"ES2021"
 		]
 	},
