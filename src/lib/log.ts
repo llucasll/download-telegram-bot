@@ -1,9 +1,9 @@
 import fs from 'node:fs/promises';
 
-import { downloadsFolder } from './bot.js';
+import { rootFolder } from './bot.js';
 
 const path = [
-	downloadsFolder,
+	rootFolder,
 	'logs.json',
 ].join('/');
 

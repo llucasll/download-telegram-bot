@@ -1,47 +1,26 @@
-import process from 'node:process';
 import fs from 'node:fs/promises';
-import fsSync from 'node:fs';
 import { dirname, basename } from 'node:path';
-import childProcess from 'node:child_process';
-import util from 'node:util';
 
-import fetch from 'node-fetch';
 import { Message } from 'typegram';
 
-import bot, { downloadsFolder, globals } from './bot.js';
-
-const exec = util.promisify(childProcess.exec);
-
-const fileNamesInUse = [] as string[];
-
-function fileNameAvailable (path: string) {
-	if (fileNamesInUse.includes(path))
-		return false;
-	
-	return !fsSync.existsSync(path);
-}
-
-async function copyFileFromContainer (source: string, target: string) {
-	let finalPath = target;
-	for (let i=1; !fileNameAvailable(finalPath); i++)
-		finalPath = `${target} (${i})`;
-	
-	fileNamesInUse.push(finalPath);
-	
-	await exec(`docker cp telegram-bot-api-server:"${source}" "${finalPath}"`);
-	
-	return finalPath;
-}
+import * as constants from './lib/constants.js';
+import { findAvailableFileName } from './lib/findAvailableFileName.js';
+import copyFileFromContainer from './lib/copyFileFromContainer.js';
+import bot, { callApi, rootFolder, globals } from './lib/bot.js';
 
 interface File {
 	file_id: string,
 	file_name?: string,
 }
+
+/** Result about the download of a file */
 interface DownloadResult {
+	/** Message sent prior to the download of the file, to be edited. */
 	message_id: number,
+	/** Path where the file was saved. */
 	path: string,
 }
-async function downloadAndSave
+async function downloadAndSaveFile
 	({ file_id, file_name }: File, message: Message):
 	Promise<DownloadResult>
 {
@@ -51,39 +30,32 @@ async function downloadAndSave
 		reply_to_message_id: message.message_id,
 	});
 	
-	const request = await fetch(`http://localhost:8081/bot${process.env.telegramToken}/getFile`, {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-		},
-		body: JSON.stringify({
-			file_id,
-		}),
-	});
+	const { file_path: pathInsideContainer } = await callApi('getFile', { file_id });
 	
-	const { result: { file_path: path } } = await request.json() as any;
-	
-	const destinationPath = [
-		downloadsFolder,
-		'downloaded',
+	const desiredPath = [
+		rootFolder,
+		constants.downloadsRelativePath,
 		globals.currentDir,
-		file_name ?? basename(path),
+		file_name ?? basename(pathInsideContainer!),
 	].join('/');
-	const dir = dirname(destinationPath);
+	const dir = dirname(desiredPath);
 	await fs.mkdir(dir, { recursive: true });
+	
+	const targetPath = findAvailableFileName(desiredPath);
+	await copyFileFromContainer(pathInsideContainer!, targetPath);
 	
 	return {
 		message_id,
-		path: await copyFileFromContainer(path, destinationPath),
+		path: targetPath,
 	};
 }
 
 export async function video (message: Message.VideoMessage) {
-	return await downloadAndSave(message.video, message);
+	return await downloadAndSaveFile(message.video, message);
 }
 
 export async function videoNote (message: Message.VideoNoteMessage) {
-	return await downloadAndSave(message.video_note, message);
+	return await downloadAndSaveFile(message.video_note, message);
 }
 
 export async function photo (message: Message.PhotoMessage) {
@@ -91,9 +63,9 @@ export async function photo (message: Message.PhotoMessage) {
 		(a, b) => a.height*a.width > b.height*b.width? a : b
 	);
 	
-	return await downloadAndSave(selected, message);
+	return await downloadAndSaveFile(selected, message);
 }
 
 export async function document (message: Message.DocumentMessage) {
-	return await downloadAndSave(message.document, message);
+	return await downloadAndSaveFile(message.document, message);
 }
