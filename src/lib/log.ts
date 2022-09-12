@@ -22,7 +22,7 @@ export default async function log (message: string, data?: any, persist=true) {
 	const str = await fs.readFile(path, { encoding: 'utf-8' })
 		.catch(_ => '[]');
 	
-	const logs = JSON.parse(str);
+	const logs = JSON.parse(str? str : '[]');
 	logs.unshift(newLog);
 	
 	await fs.writeFile(path, JSON.stringify(logs, null, '\t'));
