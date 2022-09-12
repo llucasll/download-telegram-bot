@@ -2,12 +2,9 @@ import { normalize } from 'node:path';
 
 import { Message, Update } from 'typegram';
 
-import * as constants from './lib/constants.js';
 import log from './lib/log.js';
 import bot, { authorizedUsers, rootFolder, globals } from './lib/bot.js';
 import * as download from './downloaders.js';
-
-const downloadsAbsolutePath = [ rootFolder, constants.downloadsRelativePath ].join('/');
 
 async function downloadFile (message: Message) {
 	if ('video' in message)
@@ -29,10 +26,10 @@ async function downloadFile (message: Message) {
  * @return null if the given path is invalid
  */
 function getNormalizedRelativePath (requested: string) {
-	const target = [ downloadsAbsolutePath, requested ].join('/');
-	const relative = normalize(target).replace(downloadsAbsolutePath + '/', '');
+	const target = [ rootFolder, requested ].join('/');
+	const relative = normalize(target).replace(rootFolder + '/', '');
 	
-	if (!relative || !normalize(target).startsWith(downloadsAbsolutePath))
+	if (!relative || !normalize(target).startsWith(rootFolder))
 		return null;
 	
 	return relative;

@@ -3,7 +3,6 @@ import { dirname, basename } from 'node:path';
 
 import { Message } from 'typegram';
 
-import * as constants from './lib/constants.js';
 import { findAvailableFileName } from './lib/findAvailableFileName.js';
 import copyFileFromContainer from './lib/copyFileFromContainer.js';
 import bot, { callApi, rootFolder, globals } from './lib/bot.js';
@@ -34,7 +33,6 @@ async function downloadAndSaveFile
 	
 	const desiredPath = [
 		rootFolder,
-		constants.downloadsRelativePath,
 		globals.currentDir,
 		file_name ?? basename(pathInsideContainer!),
 	].join('/');
