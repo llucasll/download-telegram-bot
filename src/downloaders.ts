@@ -5,29 +5,19 @@ import { Message } from 'typegram';
 
 import { findAvailableFileName } from './lib/findAvailableFileName.js';
 import copyFileFromContainer from './lib/copyFileFromContainer.js';
-import bot, { callApi, rootFolder, globals } from './lib/bot.js';
+import { callApi, rootFolder, globals } from './lib/bot.js';
 
 interface File {
 	file_id: string,
 	file_name?: string,
 }
 
-/** Result about the download of a file */
-interface DownloadResult {
-	/** Message sent prior to the download of the file, to be edited. */
-	message_id: number,
-	/** Path where the file was saved. */
-	path: string,
+interface SetStatusCallback {
+	(status: string): Promise<unknown>;
 }
-async function downloadAndSaveFile
-	({ file_id, file_name }: File, message: Message):
-	Promise<DownloadResult>
-{
-	const { message_id } = await bot.sendMessage({
-		chat_id: message.chat.id,
-		text: `Iniciando o download do arquivo...`,
-		reply_to_message_id: message.message_id,
-	});
+
+async function downloadAndSaveFile ({ file_id, file_name }: File, setStatus: SetStatusCallback) {
+	await setStatus(`Baixando '${file_name ?? ''}'...`);
 	
 	const { file_path: pathInsideContainer } = await callApi('getFile', { file_id });
 	
@@ -40,30 +30,28 @@ async function downloadAndSaveFile
 	await fs.mkdir(dir, { recursive: true });
 	
 	const targetPath = findAvailableFileName(desiredPath);
+	await setStatus(`Download finalizado. Salvando em '${targetPath}}'...`);
 	await copyFileFromContainer(pathInsideContainer!, targetPath);
 	
-	return {
-		message_id,
-		path: targetPath,
-	};
+	return targetPath;
 }
 
-export async function video (message: Message.VideoMessage) {
-	return await downloadAndSaveFile(message.video, message);
+export async function video (message: Message.VideoMessage, setStatus: SetStatusCallback) {
+	return await downloadAndSaveFile(message.video, setStatus);
 }
 
-export async function videoNote (message: Message.VideoNoteMessage) {
-	return await downloadAndSaveFile(message.video_note, message);
+export async function videoNote (message: Message.VideoNoteMessage, setStatus: SetStatusCallback) {
+	return await downloadAndSaveFile(message.video_note, setStatus);
 }
 
-export async function photo (message: Message.PhotoMessage) {
+export async function photo (message: Message.PhotoMessage, setStatus: SetStatusCallback) {
 	const selected = message.photo.reduce(
 		(a, b) => a.height*a.width > b.height*b.width? a : b
 	);
 	
-	return await downloadAndSaveFile(selected, message);
+	return await downloadAndSaveFile(selected, setStatus);
 }
 
-export async function document (message: Message.DocumentMessage) {
-	return await downloadAndSaveFile(message.document, message);
+export async function document (message: Message.DocumentMessage, setStatus: SetStatusCallback) {
+	return await downloadAndSaveFile(message.document, setStatus);
 }

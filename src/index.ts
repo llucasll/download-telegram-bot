@@ -20,3 +20,10 @@ await log('Authorized users', await Promise.all(
 		.then(({ first_name, last_name }: any) => first_name + ' ' + last_name)
 	)
 ), false);
+
+await Promise.all(
+	authorizedUsers.map(async chat_id => await bot.sendMessage({
+		chat_id,
+		text: `Bot de download iniciado!\nEnvie o nome da pasta`,
+	}))
+);

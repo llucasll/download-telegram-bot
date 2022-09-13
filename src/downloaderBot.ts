@@ -6,18 +6,47 @@ import log from './lib/log.js';
 import bot, { authorizedUsers, rootFolder, globals } from './lib/bot.js';
 import * as download from './downloaders.js';
 
+/**
+ * @return true if the message contains a downloadable file
+ */
 async function downloadFile (message: Message) {
+	const fileDownloader = chooseFileHandler(message);
+	
+	if (!fileDownloader)
+		return false;
+	
+	const { message_id } = await bot.sendMessage({
+		chat_id: message.chat.id,
+		text: `Iniciando o download do arquivo...`,
+		reply_to_message_id: message.message_id,
+	});
+	
+	const setStatus = async (status: string) => await bot.editMessageText({
+		message_id,
+		chat_id: message.chat.id,
+		text: status,
+	});
+	
+	// TODO
+	const path = await fileDownloader(message as any, setStatus);
+	
+	await setStatus(`Arquivo salvo em '${path.replace('../', '')}'!`);
+	
+	return true;
+}
+
+function chooseFileHandler (message: Message) {
 	if ('video' in message)
-		return await download.video(message);
+		return download.video;
 	
 	if ('video_note' in message)
-		return await download.videoNote(message);
+		return download.videoNote;
 	
 	if ('photo' in message)
-		return await download.photo(message);
+		return download.photo;
 	
 	if ('document' in message)
-		return await download.document(message);
+		return download.document;
 	
 	return null;
 }
@@ -68,15 +97,8 @@ export default async function updateHandler (update: Update) {
 			text: 'Por favor, digite o nome da pasta antes de enviar arquivos para download',
 		});
 	
-	const result = await downloadFile(message);
-	if (result) {
-		const { message_id, path } = result;
-		return await bot.editMessageText({
-			message_id,
-			chat_id: message.chat.id,
-			text: `Arquivo salvo em '${path.replace('../', '')}'!`,
-		});
-	}
+	if (await downloadFile(message))
+		return;
 	
 	await bot.sendMessage({
 		chat_id: message.chat.id,
