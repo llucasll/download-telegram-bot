@@ -17,7 +17,10 @@ interface SetStatusCallback {
 }
 
 async function downloadAndSaveFile ({ file_id, file_name }: File, setStatus: SetStatusCallback) {
-	await setStatus(`Baixando '${file_name ?? ''}'...`);
+	await setStatus(file_name
+		? `2/4 Baixando '${file_name}'...`
+		: '2/4 Baixando...'
+	);
 	
 	const { file_path: pathInsideContainer } = await callApi('getFile', { file_id });
 	
@@ -30,7 +33,7 @@ async function downloadAndSaveFile ({ file_id, file_name }: File, setStatus: Set
 	await fs.mkdir(dir, { recursive: true });
 	
 	const targetPath = findAvailableFileName(desiredPath);
-	await setStatus(`Download finalizado. Salvando em '${targetPath}}'...`);
+	await setStatus(`3/4 Download finalizado. Salvando em '${targetPath}}'...`);
 	await copyFileFromContainer(pathInsideContainer!, targetPath);
 	
 	return targetPath;

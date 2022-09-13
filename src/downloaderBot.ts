@@ -17,7 +17,7 @@ async function downloadFile (message: Message) {
 	
 	const { message_id } = await bot.sendMessage({
 		chat_id: message.chat.id,
-		text: `Iniciando o download do arquivo...`,
+		text: `1/4 Iniciando o download do arquivo...`,
 		reply_to_message_id: message.message_id,
 	});
 	
@@ -30,7 +30,7 @@ async function downloadFile (message: Message) {
 	// TODO
 	const path = await fileDownloader(message as any, setStatus);
 	
-	await setStatus(`Arquivo salvo em '${path.replace('../', '')}'!`);
+	await setStatus(`4/4 Arquivo salvo em '${path.replace('../', '')}'!`);
 	
 	return true;
 }
