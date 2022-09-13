@@ -6,6 +6,7 @@ import log from './lib/log.js';
 import bot, { authorizedUsers, rootFolder, globals } from './lib/bot.js';
 import getDownloader from './downloaders.js';
 
+let filesDownloading = 0;
 /**
  * @return true if the message contains a downloadable file
  */
@@ -15,9 +16,11 @@ async function downloadFile (message: Message) {
 	if (!fileDownloader)
 		return false;
 	
+	filesDownloading++;
+	
 	const { message_id } = await bot.sendMessage({
 		chat_id: message.chat.id,
-		text: `1/4: Iniciando o download do arquivo...`,
+		text: `⏳ 1/4: Aguardando para iniciar o download do arquivo...`,
 		reply_to_message_id: message.message_id,
 	});
 	
@@ -30,7 +33,16 @@ async function downloadFile (message: Message) {
 	// TODO
 	const path = await fileDownloader(setStatus);
 	
-	await setStatus(`4/4: Arquivo salvo em '${path.replace('../', '')}'!`);
+	await setStatus(`☑️ 4/4: Arquivo salvo em '${path.replace('../', '')}'!`);
+	
+	filesDownloading--;
+	
+	if (filesDownloading === 0)
+		await bot.sendMessage({
+			chat_id: message.chat.id,
+			text: `✅ O download de todos os arquivos foi finalizado!`,
+			reply_to_message_id: message.message_id,
+		});
 	
 	return true;
 }
@@ -107,5 +119,6 @@ export default async function updateHandler (update: Update) {
 	await bot.sendMessage({
 		chat_id: message.chat.id,
 		text: 'Desculpe, não entendi. Você deve mandar o nome de uma pasta, ou arquivos.',
+		reply_to_message_id: message.message_id,
 	});
 }
