@@ -1,8 +1,6 @@
 import fs from 'node:fs/promises';
 import { dirname, basename } from 'node:path';
 
-import { Message } from 'typegram';
-
 import { findAvailableFileName } from './lib/findAvailableFileName.js';
 import copyFileFromContainer from './lib/copyFileFromContainer.js';
 import { callApi, rootFolder, globals } from './lib/bot.js';
@@ -18,8 +16,8 @@ interface SetStatusCallback {
 
 async function downloadAndSaveFile ({ file_id, file_name }: File, setStatus: SetStatusCallback) {
 	await setStatus(file_name
-		? `2/4 Baixando '${file_name}'...`
-		: '2/4 Baixando...'
+		? `2/4: Baixando '${file_name}'...`
+		: '2/4: Baixando...'
 	);
 	
 	const { file_path: pathInsideContainer } = await callApi('getFile', { file_id });
@@ -33,28 +31,16 @@ async function downloadAndSaveFile ({ file_id, file_name }: File, setStatus: Set
 	await fs.mkdir(dir, { recursive: true });
 	
 	const targetPath = findAvailableFileName(desiredPath);
-	await setStatus(`3/4 Download finalizado. Salvando em '${targetPath}}'...`);
+	await setStatus(`3/4: Download finalizado. Salvando em '${targetPath}}'...`);
 	await copyFileFromContainer(pathInsideContainer!, targetPath);
 	
 	return targetPath;
 }
 
-export async function video (message: Message.VideoMessage, setStatus: SetStatusCallback) {
-	return await downloadAndSaveFile(message.video, setStatus);
+interface FileInfoExtractor {
+	(): File;
 }
-
-export async function videoNote (message: Message.VideoNoteMessage, setStatus: SetStatusCallback) {
-	return await downloadAndSaveFile(message.video_note, setStatus);
-}
-
-export async function photo (message: Message.PhotoMessage, setStatus: SetStatusCallback) {
-	const selected = message.photo.reduce(
-		(a, b) => a.height*a.width > b.height*b.width? a : b
-	);
-	
-	return await downloadAndSaveFile(selected, setStatus);
-}
-
-export async function document (message: Message.DocumentMessage, setStatus: SetStatusCallback) {
-	return await downloadAndSaveFile(message.document, setStatus);
+export default function getDownloader (fileInfoExtractor: FileInfoExtractor) {
+	return async (setStatus: SetStatusCallback) =>
+		await downloadAndSaveFile(fileInfoExtractor(), setStatus);
 }

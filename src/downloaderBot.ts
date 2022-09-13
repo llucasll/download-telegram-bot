@@ -4,20 +4,20 @@ import { Message, Update } from 'typegram';
 
 import log from './lib/log.js';
 import bot, { authorizedUsers, rootFolder, globals } from './lib/bot.js';
-import * as download from './downloaders.js';
+import getDownloader from './downloaders.js';
 
 /**
  * @return true if the message contains a downloadable file
  */
 async function downloadFile (message: Message) {
-	const fileDownloader = chooseFileHandler(message);
+	const fileDownloader = getFileHandler(message);
 	
 	if (!fileDownloader)
 		return false;
 	
 	const { message_id } = await bot.sendMessage({
 		chat_id: message.chat.id,
-		text: `1/4 Iniciando o download do arquivo...`,
+		text: `1/4: Iniciando o download do arquivo...`,
 		reply_to_message_id: message.message_id,
 	});
 	
@@ -28,25 +28,29 @@ async function downloadFile (message: Message) {
 	});
 	
 	// TODO
-	const path = await fileDownloader(message as any, setStatus);
+	const path = await fileDownloader(setStatus);
 	
-	await setStatus(`4/4 Arquivo salvo em '${path.replace('../', '')}'!`);
+	await setStatus(`4/4: Arquivo salvo em '${path.replace('../', '')}'!`);
 	
 	return true;
 }
 
-function chooseFileHandler (message: Message) {
+function getFileHandler (message: Message) {
 	if ('video' in message)
-		return download.video;
+		return getDownloader(() => message.video);
 	
 	if ('video_note' in message)
-		return download.videoNote;
+		return getDownloader(() => message.video_note);
 	
 	if ('photo' in message)
-		return download.photo;
+		return getDownloader(() =>
+			message.photo.reduce(
+				(a, b) => a.height*a.width > b.height*b.width? a : b
+			)
+		);
 	
 	if ('document' in message)
-		return download.document;
+		return getDownloader(() => message.document);
 	
 	return null;
 }
