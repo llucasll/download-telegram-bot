@@ -22,18 +22,30 @@ async function downloadFile (message: Message) {
 		chat_id: message.chat.id,
 		text: `⏳ 1/4: Aguardando para iniciar o download do arquivo...`,
 		reply_to_message_id: message.message_id,
+		disable_notification: true,
 	});
 	
-	const setStatus = async (status: string) => await bot.editMessageText({
+	const setStatus = async (
+		status: string,
+		args: Partial<Parameters<Telegram['editMessageText']>[0]> = {}
+	) => await bot.editMessageText({
 		message_id,
 		chat_id: message.chat.id,
 		text: status,
+		...args,
 	});
 	
-	// TODO
-	const path = await fileDownloader(setStatus);
-	
-	await setStatus(`☑️ 4/4: Arquivo salvo em '${path.replace('../', '')}'!`);
+	while (true) {
+		try {
+			const path = await fileDownloader(setStatus);
+			await setStatus(
+				`☑️ 4/4: Arquivo salvo em '${path.replace('../', '')}'!`
+			);
+			break;
+		} catch (e) {
+			await setStatus('⚠️ Erro no download do arquivo');
+		}
+	}
 	
 	filesDownloading--;
 	
@@ -93,7 +105,7 @@ export default async function updateHandler (update: Update) {
 		const relative = getNormalizedRelativePath(message.text);
 		
 		if (!relative)
-			return await bot.sendMessage({
+			return bot.sendMessage({
 				chat_id: message.chat.id,
 				text: `Desculpe, não é permitido salvar na pasta raíz, ou acima dela`,
 				reply_to_message_id: message.message_id,
@@ -101,14 +113,14 @@ export default async function updateHandler (update: Update) {
 		
 		globals.currentDir = relative;
 		
-		return await bot.sendMessage({
+		return bot.sendMessage({
 			chat_id: message.chat.id,
 			text: `Pasta alterada para '${globals.currentDir}'`,
 		});
 	}
 	
 	if (!globals.currentDir)
-		return await bot.sendMessage({
+		return bot.sendMessage({
 			chat_id: message.chat.id,
 			text: 'Por favor, digite o nome da pasta antes de enviar arquivos para download',
 		});
