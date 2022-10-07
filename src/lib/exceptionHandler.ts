@@ -1,14 +1,14 @@
 import { AnyFunction } from './utils.js';
 import log from './log.js';
 
-export async function callWithExceptionHandler
+export function callWithExceptionHandler
 	<T extends AnyFunction>
 	(f: T):
-	Promise<ReturnType<T> | null>
+	ReturnType<T> | null
 {
 	
-	try { return await f() }
-	catch (e) { await log('Unhandled Error', e) }
+	try { return f() }
+	catch (e) { log('Unhandled Error', e) }
 	
 	return null;
 }

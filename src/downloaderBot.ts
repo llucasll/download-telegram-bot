@@ -82,12 +82,12 @@ function getNormalizedRelativePath (requested: string) {
 
 export default async function updateHandler (update: Update) {
 	if (!('message' in update))
-		return await log('Not a message', update);
+		return log('Not a message', update);
 	
 	const { message } = update;
 	
 	if (!authorizedUsers.includes(message.from.id))
-		return await log('User is not authorized', update);
+		return log('User is not authorized', update);
 	
 	if ('text' in message) {
 		const relative = getNormalizedRelativePath(message.text);

@@ -14,7 +14,7 @@ TODO check if 'process.env.authorizedUsers'
 bot.on('update', withExceptionHandler(updateHandler));
 await bot.start();
 
-await log('Authorized users', await Promise.all(
+log('Authorized users', await Promise.all(
 	authorizedUsers.map(chat_id => bot.getChat({ chat_id })
 		.then(({ first_name, last_name }: any) => first_name + ' ' + last_name)
 	)

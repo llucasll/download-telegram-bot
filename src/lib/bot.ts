@@ -81,7 +81,7 @@ async function callApi
 		}
 	}
 	catch (e) {
-		await log('Fetch error', e);
+		log('Fetch error', e);
 		throw e;
 	}
 }
