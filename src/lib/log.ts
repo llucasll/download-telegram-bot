@@ -19,7 +19,9 @@ export default function log (message: string, data?: any, persist=true) {
 	if (!persist)
 		return;
 	
-	const str = fs.readFileSync(path, { encoding: 'utf-8' }) ?? '[]';
+	const str = fs.existsSync(path)?
+		fs.readFileSync(path, { encoding: 'utf-8' })
+		: '[]';
 	
 	const logs = JSON.parse(str? str : '[]');
 	logs.unshift(newLog);
