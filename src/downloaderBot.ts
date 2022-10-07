@@ -1,6 +1,6 @@
 import { normalize } from 'node:path';
 
-import { Message, Update } from 'typegram';
+import { Message, Telegram, Update } from 'typegram';
 
 import log from './lib/log.js';
 import bot, { authorizedUsers, rootFolder, globals } from './lib/bot.js';

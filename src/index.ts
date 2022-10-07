@@ -1,3 +1,5 @@
+import './environment.js';
+
 import log from './lib/log.js';
 import bot, { authorizedUsers } from './lib/bot.js';
 import withExceptionHandler from './lib/exceptionHandler.js';

@@ -7,9 +7,10 @@
 	"scripts": {
 		"apiServer:remove": "docker stop telegram-bot-api-server; docker container rm telegram-bot-api-server",
 		"apiServer": "npm run apiServer:remove; docker run -d --rm -p 8081:8081 --name=telegram-bot-api-server -v telegram-bot-api-data:/var/lib/telegram-bot-api --env-file .docker.env aiogram/telegram-bot-api",
-		"start": "npm run apiServer && nodemon --watch 'src/**/*' --watch .env --ext ts,json --exec npm run dev",
-		"dev": "export $(cat .env | xargs) && npm run prod",
-		"prod": "npx ts-node --esm src/index.ts",
+		"start": "npm run apiServer && npm run dev",
+		"dev": "nodemon --watch 'src/**/*' --watch .env --ext ts,json --exec npm run prod",
+		"prod": "npx ts-node-esm src/index.ts",
+		"stop": "pkill -f \"`cat package.json | jq -r .name`/node_modules/ts-node\" || true",
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
 	"keywords": [
@@ -24,6 +25,7 @@
 	},
 	"license": "ISC",
 	"dependencies": {
+		"dotenv": "^16.0.2",
 		"node-fetch": "^3.2.10",
 		"nodemon": "^2.0.19",
 		"telegram-bot-api": "^2.0.1",
