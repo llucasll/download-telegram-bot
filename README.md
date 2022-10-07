@@ -13,4 +13,4 @@ To run this project locally, you need to:
     1. Fill the `TELEGRAM_API_ID` and `TELEGRAM_API_HASH` fields (instructions available via [Telegram docs](https://core.telegram.org/api/obtaining_api_id#obtaining-api-id)).
     1. ⚠️ Maintain the `TELEGRAM_LOCAL` field!
 1. Install the project's dependencies (`npm install`)
-1. ⚠️ Please!! Before starting the bot (`npm start`), call it within Telegram (e.g. `/start` command)
+1. ⚠️ Please!! Before starting the bot (`npm start`), call it within Telegram (e.g. `/start` command). Telegram blocks attempts from bots to send messages to regular users which haven't talked with them before.
